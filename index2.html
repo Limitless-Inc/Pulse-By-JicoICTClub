@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>Pulse · JICO Sickbay · Healthcare Management System</title>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <!-- Chart.js 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <!-- SheetJS -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- FullCalendar for history view -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Theme Variables */
+        :root {
+            --bg-gradient-light: linear-gradient(155deg, #e4ecf7 0%, #d0dfef 100%);
+            --bg-gradient-dark: linear-gradient(155deg, #1a2634 0%, #0f1a2c 100%);
+            --container-bg-light: rgba(255,255,255,0.7);
+            --container-bg-dark: rgba(20,30,45,0.85);
+            --card-bg-light: rgba(255,255,255,0.6);
+            --card-bg-dark: rgba(30,40,55,0.7);
+            --text-primary-light: #0f2b45;
+            --text-primary-dark: #e0e9f5;
+            --text-secondary-light: #1f4465;
+            --text-secondary-dark: #b0c4de;
+            --border-light: rgba(255,255,255,0.8);
+            --border-dark: rgba(70,90,120,0.5);
+            --accent-blue: #004c97;
+            --accent-green: #1f5e3a;
+            --accent-orange: #b34a00;
+            --accent-red: #c02f2f;
+        }
+
+        body {
+            background: var(--bg-gradient-light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        body.dark-theme {
+            background: var(--bg-gradient-dark);
+        }
+
+        body.dark-theme .app-container {
+            background: var(--container-bg-dark);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 30px 55px -25px #000000, 0 0 0 1px rgba(100,150,200,0.2) inset;
+        }
+
+        body.dark-theme .stat-card,
+        body.dark-theme .register-panel,
+        body.dark-theme .records-panel,
+        body.dark-theme .detail-panel,
+        body.dark-theme .stats-panel,
+        body.dark-theme .drug-entry,
+        body.dark-theme .student-item,
+        body.dark-theme .missed-list,
+        body.dark-theme .footer-stats {
+            background: var(--card-bg-dark);
+            border-color: var(--border-dark);
+            color: var(--text-primary-dark);
+        }
+
+        body.dark-theme .stat-info h3,
+        body.dark-theme .logo-text h1,
+        body.dark-theme .section-title,
+        body.dark-theme .tab,
+        body.dark-theme .footer-stats span {
+            color: var(--text-primary-dark);
+        }
+
+        body.dark-theme .input-field {
+            background: rgba(40,50,70,0.9);
+            border-color: #3a4a60;
+            color: white;
+        }
+
+        body.dark-theme .input-field:focus {
+            border-color: #5a8ab0;
+            box-shadow: 0 0 0 3px #5a8ab030;
+        }
+
+        body.dark-theme .jico-badge,
+        body.dark-theme .student-lookup {
+            background: rgba(40,50,70,0.8);
+            color: var(--text-primary-dark);
+            border-color: var(--border-dark);
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1800px;
+            background: var(--container-bg-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 2.5rem;
+            box-shadow: 0 30px 55px -25px #102a4e, 0 0 0 1px rgba(255,255,255,0.8) inset;
+            padding: 1.5rem 1.8rem 2rem;
+            transition: all 0.2s;
+        }
+
+        @media (max-width: 720px) {
+            .app-container { padding: 1rem 1rem 1.5rem; border-radius: 2rem; }
+        }
+
+        .pulse-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { background: #002b4e; width: 48px; height: 48px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.9rem; color: white; }
+        .logo-text h1 { font-size: 1.9rem; font-weight: 700; color: #0f2b45; line-height: 1.2; }
+        .logo-text .tag { background: #ffffffd0; padding: 0.2rem 1.2rem; border-radius: 40px; font-weight: 500; color: #1e4b77; font-size: 0.8rem; border: 1px solid white; }
+
+        body.dark-theme .logo-text .tag {
+            background: #2a3a50;
+            color: #e0e9f5;
+            border-color: #4a6070;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 60px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        body.dark-theme .theme-toggle {
+            background: rgba(40,50,70,0.5);
+            border-color: #4a6070;
+            color: white;
+        }
+
+        .jico-badge { background: #ffffffcc; padding: 0.5rem 1.6rem; border-radius: 60px; font-weight: 600; color: #0f2e48; border: 1px solid white; }
+
+        .tab-bar {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 1.2rem 0 1.8rem;
+            border-bottom: 2px solid rgba(255,255,255,0.5);
+            padding-bottom: 0.3rem;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+        
+        .tab {
+            background: transparent; 
+            border: none; 
+            padding: 0.6rem 1.5rem; 
+            font-weight: 600; 
+            color: #1f4a77; 
+            border-radius: 40px 40px 0 0; 
+            cursor: pointer; 
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+        
+        .tab i { margin-right: 6px; }
+        .tab.active { background: rgba(255,255,255,0.85); color: #00315c; }
+
+        body.dark-theme .tab {
+            color: #b0c4de;
+        }
+
+        body.dark-theme .tab.active {
+            background: rgba(40,60,90,0.9);
+            color: white;
+        }
+
+        .tab-pane { display: none; animation: fade 0.25s; }
+        .tab-pane.active { display: block; }
+        @keyframes fade { 0% { opacity: 0.2; } 100% { opacity: 1; } }
+
+        .stats-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.8rem; }
+        .stat-card { background: #ffffffee; border-radius: 40px; padding: 0.7rem 1.8rem; display: flex; align-items: center; gap: 14px; flex: 1 1 150px; border: 1px solid white; box-shadow: 0 8px 22px -16px #002b4e; }
+        .stat-icon { background: #e8f0fe; width: 44px; height: 44px; border-radius: 26px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #1d4e7c; }
+        .stat-info h3 { font-size: 1.8rem; font-weight: 700; color: #052945; }
+
+        body.dark-theme .stat-icon {
+            background: #2a3a55;
+            color: #8ab3ff;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 1200px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        .register-panel { background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); border-radius: 2.2rem; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.8); }
+        .section-title { font-size: 1.3rem; color: #11355e; margin-bottom: 1.2rem; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        
+        .student-lookup { background: #eef5ff; border-radius: 60px; padding: 0.2rem 0.2rem 0.2rem 1.2rem; display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; border: 1px solid white; }
+        .student-lookup input { border: none; background: transparent; padding: 0.4rem; width: 130px; outline: none; font-size: 0.9rem; }
+        .student-lookup button { background: #00315c; border: none; color: white; border-radius: 40px; padding: 0.4rem 1rem; font-weight: 500; cursor: pointer; }
+
+        .input-group { margin-bottom: 1rem; }
+        .input-group label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #1f4465; }
+        .input-field { width: 100%; background: rgba(255,255,255,0.9); border: 1.5px solid #dae2ed; border-radius: 30px; padding: 0.75rem 1.3rem; font-size: 0.9rem; outline: none; }
+        .input-field:focus { border-color: #0077be; box-shadow: 0 0 0 3px #0077be30; }
+        
+        body.dark-theme .input-group label {
+            color: #b0c4de;
+        }
+
+        .inline-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+        .inline-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
+
+        .drugs-section { background: rgba(255,255,255,0.5); border-radius: 26px; padding: 1rem 0.8rem; margin: 0.8rem 0; border: 1px solid #d0dff0; }
+        .drug-entry { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; background: white; border-radius: 60px; padding: 0.5rem 1rem; margin-bottom: 0.7rem; }
+        .drug-entry input, .drug-entry select { background: white; border: 1px solid #c7d8ec; border-radius: 40px; padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .drug-name { flex: 2; min-width: 120px; } .drug-dosage { flex: 1; min-width: 80px; } .drug-duration { width: 70px; } .drug-times { width: 60px; } .remove-drug { background: none; border: none; color: #b00; font-size: 1.3rem; }
+        .btn-add-drug { background: rgba(255,255,255,0.8); border: 1px dashed #3670b3; border-radius: 50px; padding: 0.4rem 1.2rem; font-weight: 500; color: #175d9e; cursor: pointer; }
+        .btn-primary { background: #00315c; color: white; border: none; border-radius: 60px; padding: 0.9rem; font-weight: 600; width: 100%; cursor: pointer; margin-top: 1rem; box-shadow: 0 6px 16px #00315c60; }
+
+        /* Referral Section */
+        .referral-section {
+            background: rgba(255,255,255,0.3);
+            border-radius: 26px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px dashed #3670b3;
+        }
+
+        .referral-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .referral-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .referral-details {
+            display: none;
+        }
+
+        .referral-details.active {
+            display: block;
+        }
+
+        .completion-btn {
+            background: #1f5e3a;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-left: 1rem;
+        }
+
+        .right-col { display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        .records-panel { background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); border-radius: 2rem; border: 1px solid white; display: flex; flex-direction: column; max-height: 500px; overflow: hidden; }
+        .panel-header { padding: 1rem 1.5rem; border-bottom: 1px solid #eef3f9; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+        .search-box { background: rgba(255,255,255,0.8); border-radius: 50px; padding: 0.2rem 1rem; display: flex; align-items: center; gap: 6px; }
+        .search-box input { border: none; background: transparent; padding: 0.5rem 0; width: 150px; outline: none; }
+        
+        .student-list { list-style: none; overflow-y: auto; padding: 0.5rem 1rem 0.5rem 1.5rem; flex: 1; }
+        .student-item { 
+            background: rgba(255,255,255,0.7); 
+            border-radius: 30px; 
+            margin-bottom: 0.5rem; 
+            padding: 0.8rem 1.2rem; 
+            border: 1px solid white; 
+            cursor: pointer; 
+            transition: 0.1s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .student-item:hover { background: white; transform: translateX(4px); }
+        .student-item.selected { background: #ffffff; border-left: 6px solid #004c97; }
+
+        .student-item .status-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            background: #ffd70030;
+        }
+
+        .student-item .status-badge.completed {
+            background: #2fc48d30;
+            color: #1f5e3a;
+        }
+
+        .detail-panel { background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); border-radius: 2rem; padding: 1.4rem; border: 1px solid white; }
+        .dose-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin: 10px 0; }
+        .dose-icons i { font-size: 1.8rem; margin-right: 8px; cursor: pointer; color: #2d6390; }
+        .dose-icons i.fa-check-circle { color: #2fc48d; } .dose-icons i.fa-times-circle { color: #c02f2f; } .dose-icons i.fa-circle { color: #b3c9e0; }
+
+        .stats-panel { background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); border-radius: 2.2rem; padding: 1.8rem; border: 1px solid white; margin-top: 1rem; }
+        
+        .import-section { background: rgba(255,255,255,0.5); border-radius: 2rem; padding: 1.2rem; margin-bottom: 2rem; border: 1px solid white; }
+        .import-btn { background: #2e5a8b; color: white; border: none; border-radius: 60px; padding: 0.6rem 1.5rem; font-weight: 600; cursor: pointer; }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .chart-box { 
+            background: rgba(255,255,255,0.7); 
+            border-radius: 1.8rem; 
+            padding: 1.2rem; 
+            height: 300px;
+            position: relative;
+        }
+
+        .chart-box canvas {
+            max-height: 250px;
+            width: 100% !important;
+        }
+
+        .missed-list { background: #ffffffc0; border-radius: 2rem; padding: 1.2rem; margin: 1.5rem 0; }
+        .missed-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #cddef5; }
+        
+        .btn-excel { background: #1f5e3a; color: white; border: none; border-radius: 60px; padding: 0.8rem 2rem; font-weight: 600; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 6px 14px #1f5e3a70; }
+        .btn-email { background: #004c97; color: white; border: none; border-radius: 60px; padding: 0.8rem 2rem; font-weight: 600; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 6px 14px #004c9770; }
+        .btn-action { background: #6a4e9a; color: white; border: none; border-radius: 60px; padding: 0.6rem 1.5rem; font-weight: 600; cursor: pointer; }
+
+        .footer-stats { 
+            display: flex; 
+            gap: 1.5rem; 
+            flex-wrap: wrap; 
+            margin-top: 1.5rem; 
+            background: #ffffffb0; 
+            border-radius: 60px; 
+            padding: 0.7rem 2rem; 
+            border: 1px solid white; 
+        }
+
+        /* Accountability Dashboard */
+        .accountability-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .inventory-card {
+            background: rgba(255,255,255,0.5);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            border: 1px solid white;
+        }
+
+        .inventory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.3);
+            border-radius: 60px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stock-level {
+            width: 100px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .stock-fill {
+            height: 100%;
+            background: #1f5e3a;
+            border-radius: 4px;
+        }
+
+        .stock-fill.low {
+            background: #b34a00;
+        }
+
+        .stock-fill.critical {
+            background: #c02f2f;
+        }
+
+        .plan-card {
+            background: rgba(255,255,255,0.5);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            border: 1px solid white;
+            margin-top: 1rem;
+        }
+
+        .plan-item {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            padding: 0.8rem;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .plan-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* History Calendar */
+        .history-calendar {
+            background: rgba(255,255,255,0.5);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .student-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .student-stat-card {
+            background: rgba(255,255,255,0.5);
+            border-radius: 1.5rem;
+            padding: 1rem;
+            border: 1px solid white;
+        }
+
+        /* Dialogs */
+        .dialog-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dialog {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 30px 60px rgba(0,20,40,0.3);
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        
+        body.dark-theme .dialog {
+            background: #1a2634;
+            color: white;
+            border-color: #4a6070;
+        }
+
+        .dialog h3 {
+            color: #00315c;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        body.dark-theme .dialog h3 {
+            color: #8ab3ff;
+        }
+
+        .dialog input, .dialog textarea, .dialog select {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #dae2ed;
+            border-radius: 60px;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+        
+        body.dark-theme .dialog input,
+        body.dark-theme .dialog textarea,
+        body.dark-theme .dialog select {
+            background: #2a3a50;
+            border-color: #4a6070;
+            color: white;
+        }
+
+        .dialog textarea {
+            border-radius: 30px;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .dialog-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+        
+        .dialog-btn {
+            padding: 0.8rem 2rem;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .dialog-btn.cancel {
+            background: #eef3f9;
+            color: #2d6390;
+        }
+        
+        .dialog-btn.save {
+            background: #1f5e3a;
+            color: white;
+        }
+        
+        .dialog-btn.email {
+            background: #004c97;
+            color: white;
+        }
+
+        .folder-path {
+            background: #eef3f9;
+            padding: 0.5rem 1rem;
+            border-radius: 60px;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            word-break: break-all;
+        }
+
+        body.dark-theme .folder-path {
+            background: #2a3a50;
+            color: #b0c4de;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .inline-3col {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tab {
+                padding: 0.4rem 1rem;
+                font-size: 0.85rem;
+            }
+            
+            .header-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .app-container {
+                padding: 0.8rem;
+            }
+            
+            .stat-card {
+                padding: 0.5rem 1rem;
+            }
+            
+            .stat-info h3 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="pulse-header">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-heart-pulse"></i></div>
+            <div class="logo-text">
+                <h1>Pulse</h1>
+                <span class="tag"><i class="far fa-clock"></i> JICO Healthcare Management System</span>
+            </div>
+        </div>
+        <div class="header-controls">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-sun" id="themeIcon"></i>
+                <span>Theme</span>
+            </div>
+            <div class="jico-badge">
+                <i class="fas fa-folder"></i> 
+                <span id="dataFolderStatus">Pulse_Files</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Tabs -->
+    <div class="tab-bar">
+        <button class="tab active" id="tabMain"><i class="fas fa-clinic-medical"></i> Sickbay</button>
+        <button class="tab" id="tabStats"><i class="fas fa-chart-pie"></i> Statistics</button>
+        <button class="tab" id="tabHistory"><i class="fas fa-history"></i> History</button>
+        <button class="tab" id="tabAccountability"><i class="fas fa-clipboard-list"></i> Accountability</button>
+        <button class="tab" id="tabReports"><i class="fas fa-file-alt"></i> Reports</button>
+    </div>
+
+    <!-- Sickbay Pane -->
+    <div id="paneMain" class="tab-pane active">
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas-regular fa-notes-medical"></i></div>
+                <div class="stat-info">
+                    <h3 id="total-visits">0</h3>
+                    <p>Total Visits</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-pills"></i></div>
+                <div class="stat-info">
+                    <h3 id="ongoing-count">0</h3>
+                    <p>Ongoing Meds</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-list-check"></i></div>
+                <div class="stat-info">
+                    <h3 id="adherence-today">0%</h3>
+                    <p>Today's Adherence</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
+                <div class="stat-info">
+                    <h3 id="active-patients">0</h3>
+                    <p>Active Patients</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Registration Panel -->
+            <div class="register-panel">
+                <div class="section-title">
+                    <i class="fas fa-user-plus"></i> Register Patient
+                    <div class="student-lookup">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="lookupStudentName" placeholder="Search student..." list="studentNameList">
+                        <button id="fillFromLookupBtn"><i class="fas fa-file-import"></i> Fill</button>
+                    </div>
+                </div>
+                <datalist id="studentNameList"></datalist>
+                
+                <div class="input-group">
+                    <label>Full Name *</label>
+                    <input type="text" class="input-field" id="student-name" placeholder="Enter full name" value="James Okoro">
+                </div>
+                
+                <div class="inline-3col">
+                    <div class="input-group">
+                        <label>Class</label>
+                        <select class="input-field" id="student-class">
+                            <option>S.1</option><option>S.2</option><option>S.3</option><option>S.4</option><option>S.5</option><option>S.6</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Stream</label>
+                        <select class="input-field" id="student-stream">
+                            <option>East</option><option>West</option><option>North</option><option>South</option>
+                            <option>Arts</option><option>Sciences</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Age</label>
+                        <input type="number" class="input-field" id="age" value="15">
+                    </div>
+                </div>
+
+                <div class="inline-2col">
+                    <div class="input-group">
+                        <label>Gender</label>
+                        <select class="input-field" id="gender">
+                            <option>Male</option>
+                            <option>Female</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Contact</label>
+                        <input type="text" class="input-field" id="contact" placeholder="Phone/Email">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Symptoms / Diagnosis</label>
+                    <input type="text" class="input-field" id="symptoms" value="Fever, cough" placeholder="Describe symptoms">
+                </div>
+
+                <div class="input-group">
+                    <label>Description (Optional)</label>
+                    <textarea class="input-field" id="description" rows="2" placeholder="Additional notes..."></textarea>
+                </div>
+
+                <!-- Prescriptions Section -->
+                <div class="drugs-section">
+                    <div style="margin-bottom:6px;"><i class="fas fa-prescription"></i> Prescriptions</div>
+                    <div id="drug-list"></div>
+                    <button class="btn-add-drug" type="button" id="addDrugBtn">
+                        <i class="fas fa-plus-circle"></i> Add medication
+                    </button>
+                </div>
+
+                <!-- Referral Section -->
+                <div class="referral-section">
+                    <div class="referral-toggle">
+                        <input type="checkbox" id="hasReferral">
+                        <label for="hasReferral"><i class="fas fa-share"></i> Add Referral (Optional)</label>
+                    </div>
+                    <div class="referral-details" id="referralDetails">
+                        <div class="inline-2col">
+                            <div class="input-group">
+                                <label>Referred To</label>
+                                <input type="text" class="input-field" id="referralTo" placeholder="Hospital/Clinic/Department">
+                            </div>
+                            <div class="input-group">
+                                <label>Referral Time</label>
+                                <input type="time" class="input-field" id="referralTime">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Reason for Referral</label>
+                            <input type="text" class="input-field" id="referralReason" placeholder="Why referred?">
+                        </div>
+                        <div class="input-group">
+                            <label>Follow-up Date</label>
+                            <input type="date" class="input-field" id="followupDate">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="addStudentBtn">
+                    <i class="fas fa-floppy-disk"></i> Register Patient
+                </button>
+            </div>
+
+            <!-- Patient List and Details -->
+            <div class="right-col">
+                <div class="records-panel">
+                    <div class="panel-header">
+                        <h5><i class="fas fa-folder-open"></i> Active Patients</h5>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search..." id="searchInput">
+                        </div>
+                    </div>
+                    <ul class="student-list" id="student-list-container"></ul>
+                </div>
+
+                <div class="detail-panel" id="patientDetailPanel">
+                    <div style="display:flex; gap:10px; align-items:center; margin-bottom:0.8rem;">
+                        <i class="fas fa-id-card fa-2x" style="color:#004c97;"></i>
+                        <span>
+                            <strong id="detailName">Select a patient</strong> 
+                            <span id="detailID" class="patient-tag" style="background:#dbeafe; padding:2px 10px; border-radius:40px;"></span>
+                            <button class="completion-btn" id="markCompletedBtn" style="display:none;">
+                                <i class="fas fa-check-circle"></i> Mark Completed
+                            </button>
+                        </span>
+                    </div>
+                    <div id="emptyDetailMsg">👈 Click on any patient to view details</div>
+                    <div id="detailContent" style="display: none;">
+                        <p><span id="detailClass"></span> · <span id="detailSymptoms"></span></p>
+                        <div><i class="fas fa-prescription-bottle"></i> <span id="detailDrugs"></span></div>
+                        <div id="detailReferral" style="margin-top:0.5rem; padding:0.5rem; background:#fff3cd; border-radius:30px; display:none;"></div>
+                        <div class="dose-timetable" style="margin-top:1rem;">
+                            <h5><i class="fas fa-clock"></i> Today's Doses (click to toggle)</h5>
+                            <div id="doseTrackingContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Pane -->
+    <div id="paneStats" class="tab-pane">
+        <div class="stats-panel">
+            <div class="import-section">
+                <h4><i class="fas fa-upload"></i> Import Student Database</h4>
+                <p style="font-size:0.9rem; margin:0.5rem 0;">Expected columns: Name, Class, Stream, Age, Gender, Contact</p>
+                <input type="file" id="importFile" accept=".csv, .xlsx, .xls, .ods">
+                <button class="import-btn" id="importBtn"><i class="fas fa-file-import"></i> Import & Store</button>
+                <span id="importStatus" style="margin-left:1rem;"></span>
+            </div>
+            
+            <div class="folder-path" id="folderPathDisplay">
+                <i class="fas fa-folder-open"></i> Loading folder information...
+            </div>
+
+            <!-- Interactive Charts -->
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <h5><i class="fas fa-chart-pie"></i> Common Conditions</h5>
+                    <canvas id="diseaseChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h5><i class="fas fa-chart-bar"></i> Treatment Status</h5>
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h5><i class="fas fa-chart-line"></i> Monthly Trends</h5>
+                    <canvas id="trendChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h5><i class="fas fa-chart-pie"></i> Class Distribution</h5>
+                    <canvas id="classChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Missed Doses -->
+            <div class="missed-list">
+                <h4><i class="fas fa-exclamation-triangle" style="color:#b34a00;"></i> Patients Who Missed Doses (Today)</h4>
+                <div id="missedDosesContainer">Loading...</div>
+            </div>
+
+            <!-- Monthly Statistics -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+                <div class="stat-card">
+                    <span>This Month's Cases: <strong id="monthlyCases">0</strong></span>
+                </div>
+                <div class="stat-card">
+                    <span>Recovered This Month: <strong id="monthlyRecovered">0</strong></span>
+                </div>
+                <div class="stat-card">
+                    <span>Active Cases: <strong id="activeCases">0</strong></span>
+                </div>
+                <div class="stat-card">
+                    <span>Referrals: <strong id="totalReferrals">0</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Pane -->
+    <div id="paneHistory" class="tab-pane">
+        <div class="stats-panel">
+            <h3><i class="fas fa-history"></i> Patient History & Records</h3>
+            
+            <!-- Calendar View -->
+            <div class="history-calendar">
+                <div id="calendar"></div>
+            </div>
+
+            <!-- Student Statistics -->
+            <div class="student-stats-grid" id="studentStatsContainer">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- Detailed History Table -->
+            <div style="margin-top: 2rem;">
+                <h4><i class="fas fa-table"></i> Complete Patient History</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width:100%; border-collapse: collapse; margin-top:1rem;">
+                        <thead>
+                            <tr style="background:rgba(255,255,255,0.3);">
+                                <th style="padding:1rem; border-radius:30px 0 0 30px;">Patient ID</th>
+                                <th style="padding:1rem;">Name</th>
+                                <th style="padding:1rem;">Class</th>
+                                <th style="padding:1rem;">Total Visits</th>
+                                <th style="padding:1rem;">Common Condition</th>
+                                <th style="padding:1rem;">Last Visit</th>
+                                <th style="padding:1rem; border-radius:0 30px 30px 0;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accountability Pane -->
+    <div id="paneAccountability" class="tab-pane">
+        <div class="stats-panel">
+            <h3><i class="fas fa-clipboard-list"></i> Pharmacy & Supplies Accountability</h3>
+            
+            <!-- Inventory Overview -->
+            <div class="accountability-grid">
+                <div class="inventory-card">
+                    <div class="inventory-header">
+                        <h4><i class="fas fa-pills"></i> Current Stock Levels</h4>
+                        <button class="btn-action" id="updateStockBtn"><i class="fas fa-edit"></i> Update</button>
+                    </div>
+                    <div id="inventoryList">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <div class="inventory-card">
+                    <div class="inventory-header">
+                        <h4><i class="fas fa-chart-line"></i> Daily Dispensing Log</h4>
+                        <button class="btn-action" id="addDispenseBtn"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                    <div id="dispensingLog">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supply Planning -->
+            <div class="plan-card">
+                <h4><i class="fas fa-clipboard-check"></i> Supply Planning & Requirements</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <div>
+                        <h5>Critical Items (Order Immediately)</h5>
+                        <div id="criticalItems"></div>
+                    </div>
+                    <div>
+                        <h5>Items to Order Soon</h5>
+                        <div id="reorderItems"></div>
+                    </div>
+                    <div>
+                        <h5>Monthly Requirements</h5>
+                        <div id="monthlyRequirements"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Report -->
+            <div class="plan-card" style="margin-top: 1rem;">
+                <h4><i class="fas fa-file-alt"></i> Daily Accountability Report</h4>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding: 1rem;">
+                    <div class="stat-card">
+                        <span>Dispensed Today: <strong id="dispensedToday">0</strong></span>
+                    </div>
+                    <div class="stat-card">
+                        <span>Patients Served: <strong id="patientsToday">0</strong></span>
+                    </div>
+                    <div class="stat-card">
+                        <span>Stock Value: <strong id="stockValue">$0</strong></span>
+                    </div>
+                    <div class="stat-card">
+                        <span>Reorder Value: <strong id="reorderValue">$0</strong></span>
+                    </div>
+                </div>
+                <button class="btn-excel" id="exportAccountabilityBtn" style="margin-top:1rem;">
+                    <i class="fas fa-file-excel"></i> Export Accountability Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Pane -->
+    <div id="paneReports" class="tab-pane">
+        <div class="stats-panel">
+            <h3><i class="fas fa-file-alt"></i> Reports & Analytics</h3>
+            
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin: 2rem 0;">
+                <button class="btn-excel" id="exportFullReportBtn">
+                    <i class="fas fa-file-excel"></i> Export Complete Report
+                </button>
+                <button class="btn-email" id="emailFullReportBtn">
+                    <i class="fas fa-envelope"></i> Email Report to Admin
+                </button>
+                <button class="btn-action" id="generateMonthlyReportBtn">
+                    <i class="fas fa-calendar-alt"></i> Generate Monthly Report
+                </button>
+            </div>
+
+            <!-- Report Preview -->
+            <div class="missed-list" style="margin-top: 2rem;">
+                <h4>Monthly Summary - <span id="currentMonth">February 2026</span></h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1rem;">
+                    <div>
+                        <h5>Total Students</h5>
+                        <p style="font-size: 2rem;" id="totalStudents">0</p>
+                    </div>
+                    <div>
+                        <h5>Sick This Month</h5>
+                        <p style="font-size: 2rem;" id="sickThisMonth">0</p>
+                    </div>
+                    <div>
+                        <h5>Healthy This Month</h5>
+                        <p style="font-size: 2rem;" id="healthyThisMonth">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Charts -->
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <h5>Monthly Comparison</h5>
+                    <canvas id="monthlyComparisonChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h5>Recovery Rate</h5>
+                    <canvas id="recoveryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Stats -->
+    <div class="footer-stats">
+        <span><i class="fas fa-flag"></i> Follow-up: <span id="followUpCount">0</span></span>
+        <span><i class="fas fa-hashtag"></i> Active Patients: <span id="activePatientCount">0</span></span>
+        <span><i class="fas fa-check-circle" style="color:#2fc48d;"></i> Today's Doses: <span id="takenCounter">0</span>/<span id="totalDosesCounter">0</span></span>
+        <span><i class="fas fa-truck"></i> Stock Alerts: <span id="stockAlerts">0</span></span>
+    </div>
+</div>
+
+<!-- Save Dialog -->
+<div class="dialog-overlay" id="saveDialog">
+    <div class="dialog">
+        <h3><i class="fas fa-save"></i> Save Report</h3>
+        <input type="text" id="saveFileName" placeholder="Enter filename" value="healthcare_report">
+        <div class="folder-path" id="saveFolderPath"></div>
+        <div class="dialog-buttons">
+            <button class="dialog-btn cancel" id="cancelSaveBtn">Cancel</button>
+            <button class="dialog-btn save" id="confirmSaveBtn">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Email Dialog -->
+<div class="dialog-overlay" id="emailDialog">
+    <div class="dialog">
+        <h3><i class="fas fa-envelope"></i> Email Report</h3>
+        <input type="email" id="adminEmail" placeholder="Admin Email" value="admin@jicoschool.edu">
+        <input type="text" id="emailSubject" placeholder="Subject" value="Healthcare Report">
+        <textarea id="emailMessage" placeholder="Message">Please find attached the healthcare report.</textarea>
+        <div class="dialog-buttons">
+            <button class="dialog-btn cancel" id="cancelEmailBtn">Cancel</button>
+            <button class="dialog-btn email" id="confirmEmailBtn">Send</button>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Update Dialog -->
+<div class="dialog-overlay" id="stockDialog">
+    <div class="dialog">
+        <h3><i class="fas fa-pills"></i> Update Stock</h3>
+        <select id="stockMedication" class="input-field">
+            <option>Paracetamol</option>
+            <option>Amoxicillin</option>
+            <option>Ibuprofen</option>
+            <option>Artemether</option>
+            <option>Cough Syrup</option>
+        </select>
+        <input type="number" id="stockQuantity" placeholder="Quantity" min="0">
+        <input type="number" id="stockReorder" placeholder="Reorder Level" min="0">
+        <div class="dialog-buttons">
+            <button class="dialog-btn cancel" id="cancelStockBtn">Cancel</button>
+            <button class="dialog-btn save" id="confirmStockBtn">Update</button>
+        </div>
+    </div>
+</div>
+
+<datalist id="drugSuggest">
+    <option value="Paracetamol">
+    <option value="Amoxicillin">
+    <option value="Artemether">
+    <option value="Ibuprofen">
+    <option value="Metronidazole">
+    <option value="Cough Syrup">
+    <option value="Antihistamine">
+    <option value="Antacid">
+</datalist>
+
+<script>
+(function() {
+    // ------------------------------------------------------------------
+    // Enhanced Healthcare Management System
+    // ------------------------------------------------------------------
+    const DB_NAME = 'PulseHealthcareDB';
+    const DB_VERSION = 3;
+    const STUDENT_STORE = 'patients';
+    const IMPORT_STORE = 'studentDatabase';
+    const INVENTORY_STORE = 'inventory';
+    const DISPENSING_STORE = 'dispensing';
+    const SETTINGS_STORE = 'settings';
+
+    let db = null;
+    let patients = [];
+    let studentDatabase = [];
+    let inventory = [];
+    let dispensingLog = [];
+    let appSettings = {
+        pulseFolderPath: '',
+        adminEmail: 'admin@jicoschool.edu',
+        theme: 'light'
+    };
+
+    // Initialize Database
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onerror = (e) => { console.error('DB error', e); reject(e); };
+            request.onsuccess = (e) => { 
+                db = e.target.result;
+                initializeSampleData();
+                resolve(db);
+            };
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(STUDENT_STORE)) {
+                    db.createObjectStore(STUDENT_STORE, { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains(IMPORT_STORE)) {
+                    db.createObjectStore(IMPORT_STORE, { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains(INVENTORY_STORE)) {
+                    db.createObjectStore(INVENTORY_STORE, { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains(DISPENSING_STORE)) {
+                    db.createObjectStore(DISPENSING_STORE, { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains(SETTINGS_STORE)) {
+                    db.createObjectStore(SETTINGS_STORE, { keyPath: 'key' });
+                }
+            };
+        });
+    }
+
+    // Initialize sample data for demonstration
+    function initializeSampleData() {
+        if (patients.length === 0) {
+            // Add sample patients
+            patients = [
+                {
+                    id: 's1',
+                    patientNumber: 'P001',
+                    name: 'James Okoro',
+                    class: 'S.3',
+                    stream: 'Science',
+                    age: 16,
+                    gender: 'Male',
+                    contact: 'james@example.com',
+                    symptoms: 'Malaria, Fever',
+                    description: 'Severe headache and high fever',
+                    drugs: [
+                        { name: 'Artemether', dosage: '80mg', duration: 3, status: 'ongoing', timesPerDay: 2 }
+                    ],
+                    adherence: {},
+                    date: '2026-02-10',
+                    visits: 3,
+                    status: 'active'
+                },
+                {
+                    id: 's2',
+                    patientNumber: 'P002',
+                    name: 'Sarah Nambi',
+                    class: 'S.4',
+                    stream: 'Arts',
+                    age: 17,
+                    gender: 'Female',
+                    contact: 'sarah@example.com',
+                    symptoms: 'Flu, Cough',
+                    description: 'Persistent cough and runny nose',
+                    drugs: [
+                        { name: 'Cough Syrup', dosage: '10ml', duration: 5, status: 'ongoing', timesPerDay: 3 }
+                    ],
+                    adherence: {},
+                    date: '2026-02-12',
+                    visits: 2,
+                    status: 'active'
+                }
+            ];
+        }
+
+        if (inventory.length === 0) {
+            inventory = [
+                { id: 1, name: 'Paracetamol', quantity: 500, reorderLevel: 100, unit: 'tablets', price: 0.05 },
+                { id: 2, name: 'Amoxicillin', quantity: 200, reorderLevel: 50, unit: 'capsules', price: 0.15 },
+                { id: 3, name: 'Artemether', quantity: 50, reorderLevel: 30, unit: 'doses', price: 2.50 },
+                { id: 4, name: 'Ibuprofen', quantity: 300, reorderLevel: 80, unit: 'tablets', price: 0.08 },
+                { id: 5, name: 'Cough Syrup', quantity: 25, reorderLevel: 20, unit: 'bottles', price: 3.00 }
+            ];
+        }
+
+        if (dispensingLog.length === 0) {
+            dispensingLog = [
+                { id: 1, date: '2026-02-14', medication: 'Paracetamol', quantity: 25, patient: 'P001', nurse: 'Sister Mary' },
+                { id: 2, date: '2026-02-14', medication: 'Artemether', quantity: 10, patient: 'P001', nurse: 'Sister Mary' }
+            ];
+        }
+    }
+
+    // Save functions
+    function savePatients() {
+        if (!db) return;
+        const tx = db.transaction(STUDENT_STORE, 'readwrite');
+        const store = tx.objectStore(STUDENT_STORE);
+        store.clear();
+        patients.forEach(p => store.put(p));
+    }
+
+    function saveInventory() {
+        if (!db) return;
+        const tx = db.transaction(INVENTORY_STORE, 'readwrite');
+        const store = tx.objectStore(INVENTORY_STORE);
+        store.clear();
+        inventory.forEach(i => store.put(i));
+    }
+
+    function saveDispensing() {
+        if (!db) return;
+        const tx = db.transaction(DISPENSING_STORE, 'readwrite');
+        const store = tx.objectStore(DISPENSING_STORE);
+        store.clear();
+        dispensingLog.forEach(d => store.put(d));
+    }
+
+    // Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        if (document.body.classList.contains('dark-theme')) {
+            themeIcon.className = 'fas fa-moon';
+            appSettings.theme = 'dark';
+        } else {
+            themeIcon.className = 'fas fa-sun';
+            appSettings.theme = 'light';
+        }
+    });
+
+    // Patient ID generator
+    function getNextPatientNumber() {
+        let max = 0;
+        patients.forEach(p => {
+            let n = parseInt(p.patientNumber?.substring(1) || '0', 10);
+            if (n > max) max = n;
+        });
+        return 'P' + String(max + 1).padStart(3, '0');
+    }
+
+    // DOM Elements
+    const listContainer = document.getElementById('student-list-container');
+    const addBtn = document.getElementById('addStudentBtn');
+    const searchInput = document.getElementById('searchInput');
+    const nameInp = document.getElementById('student-name');
+    const classInp = document.getElementById('student-class');
+    const streamInp = document.getElementById('student-stream');
+    const ageInp = document.getElementById('age');
+    const genderInp = document.getElementById('gender');
+    const contactInp = document.getElementById('contact');
+    const symptomsInp = document.getElementById('symptoms');
+    const descriptionInp = document.getElementById('description');
+    const drugListDiv = document.getElementById('drug-list');
+    const addDrugBtn = document.getElementById('addDrugBtn');
+    const lookupInput = document.getElementById('lookupStudentName');
+    const fillBtn = document.getElementById('fillFromLookupBtn');
+    const hasReferral = document.getElementById('hasReferral');
+    const referralDetails = document.getElementById('referralDetails');
+    const markCompletedBtn = document.getElementById('markCompletedBtn');
+
+    // Referral toggle
+    hasReferral.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            referralDetails.classList.add('active');
+        } else {
+            referralDetails.classList.remove('active');
+        }
+    });
+
+    // Drug row factory
+    function createDrugEntry(drug = { name: '', dosage: '', duration: 3, status: 'ongoing', timesPerDay: 2 }) {
+        const div = document.createElement('div');
+        div.className = 'drug-entry';
+        div.innerHTML = `
+            <input type="text" class="drug-name" placeholder="Medication" value="${drug.name}" list="drugSuggest">
+            <input type="text" class="drug-dosage" placeholder="Dosage" value="${drug.dosage}">
+            <input type="number" class="drug-duration" placeholder="Days" value="${drug.duration}" min="1" style="width:70px;">
+            <select class="drug-status" style="width:100px;">
+                <option value="ongoing" ${drug.status === 'ongoing' ? 'selected' : ''}>Ongoing</option>
+                <option value="completed" ${drug.status === 'completed' ? 'selected' : ''}>Completed</option>
+            </select>
+            <select class="drug-times" style="width:60px;">
+                <option value="1" ${drug.timesPerDay == 1 ? 'selected' : ''}>1x</option>
+                <option value="2" ${drug.timesPerDay == 2 ? 'selected' : ''}>2x</option>
+                <option value="3" ${drug.timesPerDay == 3 ? 'selected' : ''}>3x</option>
+            </select>
+            <button class="remove-drug"><i class="fas fa-times-circle"></i></button>
+        `;
+        div.querySelector('.remove-drug').addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (document.querySelectorAll('.drug-entry').length > 1) {
+                div.remove();
+            } else {
+                alert('At least one medication required');
+            }
+        });
+        return div;
+    }
+
+    function resetDrugList() {
+        drugListDiv.innerHTML = '';
+        drugListDiv.appendChild(createDrugEntry({ name: 'Paracetamol', dosage: '500mg', duration: 3, status: 'ongoing', timesPerDay: 2 }));
+    }
+    resetDrugList();
+    addDrugBtn.addEventListener('click', () => drugListDiv.appendChild(createDrugEntry()));
+
+    // Collect form data
+    function collectDrugsFromForm() {
+        let drugs = [];
+        document.querySelectorAll('.drug-entry').forEach(div => {
+            let name = div.querySelector('.drug-name')?.value.trim();
+            if (name) {
+                drugs.push({
+                    name: name,
+                    dosage: div.querySelector('.drug-dosage')?.value.trim() || '',
+                    duration: parseInt(div.querySelector('.drug-duration')?.value) || 1,
+                    status: div.querySelector('.drug-status')?.value || 'ongoing',
+                    timesPerDay: parseInt(div.querySelector('.drug-times')?.value) || 2
+                });
+            }
+        });
+        return drugs.length ? drugs : [{ name: 'none', dosage: '', duration: 1, status: 'completed', timesPerDay: 1 }];
+    }
+
+    // Fill from lookup
+    fillBtn.addEventListener('click', () => {
+        const searchName = lookupInput.value.trim().toLowerCase();
+        const match = studentDatabase.find(s => s.Name?.toLowerCase() === searchName);
+        if (!match) {
+            alert('Student not found in database');
+            return;
+        }
+        nameInp.value = match.Name || '';
+        if (match.Class) classInp.value = match.Class;
+        if (match.Stream) streamInp.value = match.Stream;
+        if (match.Age) ageInp.value = match.Age;
+        if (match.Gender) genderInp.value = match.Gender;
+        if (match.Contact) contactInp.value = match.Contact;
+    });
+
+    // Add patient
+    addBtn.addEventListener('click', () => {
+        let name = nameInp.value.trim();
+        if (!name) return alert('Enter patient name');
+
+        let drugs = collectDrugsFromForm();
+        
+        // Collect referral data
+        let referral = null;
+        if (hasReferral.checked) {
+            referral = {
+                to: document.getElementById('referralTo').value,
+                time: document.getElementById('referralTime').value,
+                reason: document.getElementById('referralReason').value,
+                followup: document.getElementById('followupDate').value
+            };
+        }
+
+        let newPatient = {
+            id: 'p' + Date.now() + Math.random().toString(36).substr(2, 5),
+            patientNumber: getNextPatientNumber(),
+            name: name,
+            class: classInp.value || '—',
+            stream: streamInp.value || '—',
+            age: parseInt(ageInp.value) || 15,
+            gender: genderInp.value || 'Male',
+            contact: contactInp.value || '',
+            symptoms: symptomsInp.value.trim() || '—',
+            description: descriptionInp.value.trim() || '',
+            drugs: drugs,
+            referral: referral,
+            adherence: {},
+            date: new Date().toISOString().slice(0, 10),
+            visits: 1,
+            status: 'active',
+            history: []
+        };
+
+        patients.push(newPatient);
+        refreshUI(searchInput.value);
+        
+        // Reset form
+        nameInp.value = '';
+        classInp.value = 'S.1';
+        streamInp.value = 'East';
+        ageInp.value = '15';
+        genderInp.value = 'Male';
+        contactInp.value = '';
+        symptomsInp.value = '';
+        descriptionInp.value = '';
+        hasReferral.checked = false;
+        referralDetails.classList.remove('active');
+        resetDrugList();
+
+        savePatients();
+        updateAllCharts();
+    });
+
+    // Refresh UI
+    let selectedPatientId = null;
+
+    function refreshUI(filter = '') {
+        // Update stats
+        document.getElementById('total-visits').innerText = patients.reduce((acc, p) => acc + (p.visits || 1), 0);
+        document.getElementById('ongoing-count').innerText = patients.filter(p => 
+            p.drugs.some(d => d.status === 'ongoing')
+        ).length;
+        document.getElementById('active-patients').innerText = patients.filter(p => p.status === 'active').length;
+        document.getElementById('activePatientCount').innerText = patients.filter(p => p.status === 'active').length;
+
+        // Calculate adherence
+        let today = new Date().toISOString().slice(0, 10);
+        let totalDoses = 0, takenDoses = 0;
+        patients.forEach(p => {
+            if (p.adherence && p.adherence[today]) {
+                Object.values(p.adherence[today]).forEach(times => {
+                    ['morning', 'afternoon', 'evening'].forEach(slot => {
+                        if (times[slot] !== undefined) {
+                            totalDoses++;
+                            if (times[slot] === true) takenDoses++;
+                        }
+                    });
+                });
+            }
+        });
+        let pct = totalDoses ? Math.round(takenDoses / totalDoses * 100) : 0;
+        document.getElementById('adherence-today').innerText = pct + '%';
+        document.getElementById('takenCounter').innerText = takenDoses;
+        document.getElementById('totalDosesCounter').innerText = totalDoses;
+
+        // Filter patients
+        let filtered = patients;
+        if (filter.trim()) {
+            filtered = patients.filter(p => 
+                p.name.toLowerCase().includes(filter.toLowerCase()) || 
+                p.patientNumber.includes(filter)
+            );
+        }
+
+        // Render patient list
+        listContainer.innerHTML = '';
+        filtered.forEach(p => {
+            let li = document.createElement('li');
+            li.className = `student-item ${selectedPatientId === p.id ? 'selected' : ''}`;
+            li.setAttribute('data-id', p.id);
+            
+            let statusClass = p.drugs.some(d => d.status === 'ongoing') ? '' : 'completed';
+            li.innerHTML = `
+                <div>
+                    <h4>${p.name} · ${p.patientNumber}</h4>
+                    <small>${p.class} · ${p.symptoms.substring(0, 20)}</small>
+                </div>
+                <span class="status-badge ${statusClass}">
+                    ${p.drugs.some(d => d.status === 'ongoing') ? 'Active' : 'Completed'}
+                </span>
+            `;
+            
+            li.addEventListener('click', () => {
+                selectedPatientId = p.id;
+                refreshUI(searchInput.value);
+                renderPatientDetail(p.id);
+            });
+            
+            listContainer.appendChild(li);
+        });
+
+        if (selectedPatientId && patients.find(p => p.id === selectedPatientId)) {
+            renderPatientDetail(selectedPatientId);
+        } else {
+            document.getElementById('detailContent').style.display = 'none';
+            document.getElementById('emptyDetailMsg').style.display = 'block';
+            markCompletedBtn.style.display = 'none';
+        }
+
+        // Update footer stats
+        let missedToday = 0;
+        patients.forEach(p => {
+            if (p.adherence && p.adherence[today]) {
+                Object.values(p.adherence[today]).forEach(t => {
+                    if (t.morning === false) missedToday++;
+                    if (t.afternoon === false) missedToday++;
+                    if (t.evening === false) missedToday++;
+                });
+            }
+        });
+        document.getElementById('followUpCount').innerText = missedToday;
+
+        // Stock alerts
+        let alerts = inventory.filter(i => i.quantity <= i.reorderLevel).length;
+        document.getElementById('stockAlerts').innerText = alerts;
+
+        updateAllCharts();
+        savePatients();
+    }
+
+    // Render patient detail
+    function renderPatientDetail(id) {
+        let p = patients.find(p => p.id === id);
+        if (!p) return;
+
+        document.getElementById('emptyDetailMsg').style.display = 'none';
+        document.getElementById('detailContent').style.display = 'block';
+        document.getElementById('detailName').innerText = p.name;
+        document.getElementById('detailID').innerText = p.patientNumber;
+        document.getElementById('detailClass').innerText = p.class + ' · ' + p.stream;
+        document.getElementById('detailSymptoms').innerText = p.symptoms;
+
+        let drugStr = p.drugs.map(d => `${d.name} (${d.dosage} ${d.timesPerDay}x/d)`).join(', ');
+        document.getElementById('detailDrugs').innerText = drugStr;
+
+        // Show referral if exists
+        let referralDiv = document.getElementById('detailReferral');
+        if (p.referral && p.referral.to) {
+            referralDiv.style.display = 'block';
+            referralDiv.innerHTML = `
+                <i class="fas fa-share"></i> Referred to ${p.referral.to} 
+                at ${p.referral.time || 'N/A'} - ${p.referral.reason || ''}
+                ${p.referral.followup ? `<br>Follow-up: ${p.referral.followup}` : ''}
+            `;
+        } else {
+            referralDiv.style.display = 'none';
+        }
+
+        // Show mark completed button if patient has ongoing medications
+        if (p.drugs.some(d => d.status === 'ongoing')) {
+            markCompletedBtn.style.display = 'inline-block';
+            markCompletedBtn.onclick = () => markPatientCompleted(p.id);
+        } else {
+            markCompletedBtn.style.display = 'none';
+        }
+
+        // Dose tracking
+        let today = new Date().toISOString().slice(0, 10);
+        if (!p.adherence) p.adherence = {};
+        if (!p.adherence[today]) {
+            p.adherence[today] = {};
+            p.drugs.forEach(d => {
+                if (d.status === 'ongoing') {
+                    p.adherence[today][d.name] = { morning: null, afternoon: null, evening: null };
+                }
+            });
+        }
+
+        let container = document.getElementById('doseTrackingContainer');
+        container.innerHTML = '';
+        
+        p.drugs.filter(d => d.status === 'ongoing').forEach(drug => {
+            let times = drug.timesPerDay || 2;
+            let slots = ['morning', 'afternoon', 'evening'].slice(0, times);
+            let row = document.createElement('div');
+            row.className = 'dose-row';
+            row.innerHTML = `<span style="width:100px;">${drug.name}</span>`;
+            
+            let iconDiv = document.createElement('div');
+            iconDiv.className = 'dose-icons';
+            
+            let ad = p.adherence[today][drug.name] || { morning: null, afternoon: null, evening: null };
+            
+            slots.forEach(slot => {
+                let icon = document.createElement('i');
+                icon.className = `fas ${ad[slot] === true ? 'fa-check-circle' : (ad[slot] === false ? 'fa-times-circle' : 'fa-circle')}`;
+                icon.setAttribute('data-drug', drug.name);
+                icon.setAttribute('data-slot', slot);
+                icon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    let curr = p.adherence[today][drug.name]?.[slot];
+                    let newVal = curr === true ? false : (curr === false ? null : true);
+                    if (!p.adherence[today][drug.name]) p.adherence[today][drug.name] = {};
+                    p.adherence[today][drug.name][slot] = newVal;
+                    
+                    // Update dispensing log
+                    if (newVal === true) {
+                        dispensingLog.push({
+                            id: Date.now(),
+                            date: today,
+                            medication: drug.name,
+                            quantity: 1,
+                            patient: p.patientNumber,
+                            nurse: 'Current User',
+                            dose: slot
+                        });
+                        saveDispensing();
+                        
+                        // Update inventory
+                        let invItem = inventory.find(i => i.name.toLowerCase() === drug.name.toLowerCase());
+                        if (invItem) {
+                            invItem.quantity = Math.max(0, invItem.quantity - 1);
+                            saveInventory();
+                        }
+                    }
+                    
+                    renderPatientDetail(id);
+                    refreshUI(searchInput.value);
+                });
+                iconDiv.appendChild(icon);
+            });
+            
+            row.appendChild(iconDiv);
+            container.appendChild(row);
+        });
+    }
+
+    // Mark patient as completed
+    function markPatientCompleted(id) {
+        let p = patients.find(p => p.id === id);
+        if (p) {
+            p.drugs.forEach(d => { d.status = 'completed'; });
+            p.status = 'completed';
+            refreshUI(searchInput.value);
+        }
+    }
+
+    // Update all charts
+    function updateAllCharts() {
+        // Disease chart
+        let diseases = {};
+        patients.forEach(p => {
+            let sym = p.symptoms.split(',')[0].trim() || 'Other';
+            diseases[sym] = (diseases[sym] || 0) + 1;
+        });
+
+        let ctx1 = document.getElementById('diseaseChart')?.getContext('2d');
+        if (ctx1 && window.diseaseChart) window.diseaseChart.destroy();
+        if (ctx1) {
+            window.diseaseChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(diseases),
+                    datasets: [{
+                        data: Object.values(diseases),
+                        backgroundColor: ['#2e8b57', '#cd5c5c', '#4682b4', '#daa520', '#6a4e9a', '#ff6b6b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Status chart
+        let ongoing = patients.filter(p => p.drugs.some(d => d.status === 'ongoing')).length;
+        let completed = patients.filter(p => !p.drugs.some(d => d.status === 'ongoing')).length;
+
+        let ctx2 = document.getElementById('statusChart')?.getContext('2d');
+        if (ctx2 && window.statusChart) window.statusChart.destroy();
+        if (ctx2) {
+            window.statusChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Ongoing', 'Completed'],
+                    datasets: [{
+                        data: [ongoing, completed],
+                        backgroundColor: ['#4682b4', '#2e8b57']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Monthly trend chart
+        let monthlyData = {};
+        patients.forEach(p => {
+            let month = p.date.substring(0, 7);
+            monthlyData[month] = (monthlyData[month] || 0) + 1;
+        });
+
+        let ctx3 = document.getElementById('trendChart')?.getContext('2d');
+        if (ctx3 && window.trendChart) window.trendChart.destroy();
+        if (ctx3) {
+            window.trendChart = new Chart(ctx3, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(monthlyData).sort(),
+                    datasets: [{
+                        label: 'Patient Visits',
+                        data: Object.values(monthlyData),
+                        borderColor: '#004c97',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Class distribution
+        let classData = {};
+        patients.forEach(p => {
+            classData[p.class] = (classData[p.class] || 0) + 1;
+        });
+
+        let ctx4 = document.getElementById('classChart')?.getContext('2d');
+        if (ctx4 && window.classChart) window.classChart.destroy();
+        if (ctx4) {
+            window.classChart = new Chart(ctx4, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(classData),
+                    datasets: [{
+                        data: Object.values(classData),
+                        backgroundColor: ['#ff9f43', '#00b894', '#0984e3', '#6c5ce7', '#e84342']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Update missed doses list
+        let today = new Date().toISOString().slice(0, 10);
+        let missedList = [];
+        patients.forEach(p => {
+            if (p.adherence && p.adherence[today]) {
+                let missed = 0;
+                Object.values(p.adherence[today]).forEach(t => {
+                    if (t.morning === false) missed++;
+                    if (t.afternoon === false) missed++;
+                    if (t.evening === false) missed++;
+                });
+                if (missed > 0) {
+                    missedList.push({ name: p.name, patient: p.patientNumber, missed: missed });
+                }
+            }
+        });
+
+        let missedContainer = document.getElementById('missedDosesContainer');
+        if (missedList.length === 0) {
+            missedContainer.innerHTML = '<p>✅ No missed doses today.</p>';
+        } else {
+            missedContainer.innerHTML = missedList.map(m => 
+                `<div class="missed-item"><span>${m.name} (${m.patient})</span><span style="color:#b34a00;">${m.missed} missed</span></div>`
+            ).join('');
+        }
+
+        // Monthly statistics
+        let currentMonth = new Date().toISOString().slice(0, 7);
+        let monthlyCases = patients.filter(p => p.date.startsWith(currentMonth)).length;
+        document.getElementById('monthlyCases').innerText = monthlyCases;
+        
+        let monthlyRecovered = patients.filter(p => 
+            p.date.startsWith(currentMonth) && !p.drugs.some(d => d.status === 'ongoing')
+        ).length;
+        document.getElementById('monthlyRecovered').innerText = monthlyRecovered;
+        
+        document.getElementById('activeCases').innerText = patients.filter(p => 
+            p.drugs.some(d => d.status === 'ongoing')
+        ).length;
+        
+        document.getElementById('totalReferrals').innerText = patients.filter(p => p.referral).length;
+    }
+
+    // Initialize inventory display
+    function updateInventoryDisplay() {
+        let inventoryList = document.getElementById('inventoryList');
+        if (!inventoryList) return;
+
+        inventoryList.innerHTML = '';
+        inventory.forEach(item => {
+            let stockPercent = (item.quantity / (item.reorderLevel * 3)) * 100;
+            let stockClass = '';
+            if (item.quantity <= item.reorderLevel) stockClass = 'critical';
+            else if (item.quantity <= item.reorderLevel * 2) stockClass = 'low';
+
+            inventoryList.innerHTML += `
+                <div class="inventory-item">
+                    <div style="flex:2;">
+                        <strong>${item.name}</strong><br>
+                        <small>${item.quantity} ${item.unit}</small>
+                    </div>
+                    <div style="flex:2;">
+                        <div class="stock-level">
+                            <div class="stock-fill ${stockClass}" style="width:${Math.min(stockPercent, 100)}%"></div>
+                        </div>
+                    </div>
+                    <div style="flex:1; text-align:right;">
+                        <small>Reorder: ${item.reorderLevel}</small>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Update dispensing log
+        let logDiv = document.getElementById('dispensingLog');
+        if (logDiv) {
+            let today = new Date().toISOString().slice(0, 10);
+            let todayLog = dispensingLog.filter(d => d.date === today).slice(-5);
+            logDiv.innerHTML = todayLog.map(d => 
+                `<div class="inventory-item">
+                    <span>${d.medication}</span>
+                    <span>Qty: ${d.quantity}</span>
+                    <span>${d.patient}</span>
+                </div>`
+            ).join('');
+
+            if (todayLog.length === 0) {
+                logDiv.innerHTML = '<p>No dispensing today</p>';
+            }
+        }
+
+        // Update critical items
+        let criticalItems = inventory.filter(i => i.quantity <= i.reorderLevel);
+        document.getElementById('criticalItems').innerHTML = criticalItems.map(i => 
+            `<div class="inventory-item">
+                <span>${i.name}</span>
+                <span style="color:#c02f2f;">${i.quantity} left</span>
+            </div>`
+        ).join('') || '<p>No critical items</p>';
+
+        // Update reorder items
+        let reorderItems = inventory.filter(i => i.quantity > i.reorderLevel && i.quantity <= i.reorderLevel * 2);
+        document.getElementById('reorderItems').innerHTML = reorderItems.map(i => 
+            `<div class="inventory-item">
+                <span>${i.name}</span>
+                <span>${i.quantity} left</span>
+            </div>`
+        ).join('') || '<p>No items to reorder</p>';
+
+        // Calculate totals
+        document.getElementById('dispensedToday').innerText = dispensingLog.filter(d => 
+            d.date === new Date().toISOString().slice(0, 10)
+        ).reduce((acc, d) => acc + d.quantity, 0);
+
+        document.getElementById('patientsToday').innerText = [...new Set(
+            dispensingLog.filter(d => d.date === new Date().toISOString().slice(0, 10))
+                .map(d => d.patient)
+        )].length;
+
+        let stockValue = inventory.reduce((acc, i) => acc + (i.quantity * i.price), 0);
+        document.getElementById('stockValue').innerText = '$' + stockValue.toFixed(2);
+
+        let reorderValue = inventory.filter(i => i.quantity <= i.reorderLevel)
+            .reduce((acc, i) => acc + ((i.reorderLevel * 3) - i.quantity) * i.price, 0);
+        document.getElementById('reorderValue').innerText = '$' + reorderValue.toFixed(2);
+    }
+
+    // Update history view
+    function updateHistoryView() {
+        // Calendar initialization
+        const calendarEl = document.getElementById('calendar');
+        if (calendarEl && !window.calendar) {
+            window.calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek'
+                },
+                events: patients.map(p => ({
+                    title: p.name,
+                    start: p.date,
+                    backgroundColor: p.drugs.some(d => d.status === 'ongoing') ? '#f39c12' : '#27ae60'
+                }))
+            });
+            window.calendar.render();
+        }
+
+        // Student statistics
+        let statsContainer = document.getElementById('studentStatsContainer');
+        let studentVisits = {};
+        patients.forEach(p => {
+            studentVisits[p.name] = (studentVisits[p.name] || 0) + 1;
+        });
+
+        statsContainer.innerHTML = Object.entries(studentVisits)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6)
+            .map(([name, visits]) => `
+                <div class="student-stat-card">
+                    <h4>${name}</h4>
+                    <p>Visits: ${visits}</p>
+                    <small>Last: ${patients.filter(p => p.name === name).pop()?.date || 'N/A'}</small>
+                </div>
+            `).join('');
+
+        // History table
+        let tableBody = document.getElementById('historyTableBody');
+        let historyData = [];
+        patients.forEach(p => {
+            let existing = historyData.find(h => h.name === p.name);
+            if (existing) {
+                existing.visits++;
+                existing.lastVisit = p.date > existing.lastVisit ? p.date : existing.lastVisit;
+            } else {
+                historyData.push({
+                    id: p.patientNumber,
+                    name: p.name,
+                    class: p.class,
+                    visits: 1,
+                    condition: p.symptoms.split(',')[0],
+                    lastVisit: p.date,
+                    status: p.drugs.some(d => d.status === 'ongoing') ? 'Active' : 'Recovered'
+                });
+            }
+        });
+
+        tableBody.innerHTML = historyData.map(h => `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.2);">
+                <td style="padding:0.8rem;">${h.id}</td>
+                <td style="padding:0.8rem;">${h.name}</td>
+                <td style="padding:0.8rem;">${h.class}</td>
+                <td style="padding:0.8rem;">${h.visits}</td>
+                <td style="padding:0.8rem;">${h.condition}</td>
+                <td style="padding:0.8rem;">${h.lastVisit}</td>
+                <td style="padding:0.8rem;">
+                    <span class="status-badge ${h.status === 'Active' ? '' : 'completed'}">${h.status}</span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Update reports
+    function updateReports() {
+        let totalStudents = studentDatabase.length || patients.length;
+        let thisMonth = new Date().toISOString().slice(0, 7);
+        let sickThisMonth = patients.filter(p => p.date.startsWith(thisMonth)).length;
+        let healthyThisMonth = totalStudents - sickThisMonth;
+
+        document.getElementById('totalStudents').innerText = totalStudents;
+        document.getElementById('sickThisMonth').innerText = sickThisMonth;
+        document.getElementById('healthyThisMonth').innerText = healthyThisMonth;
+
+        // Monthly comparison chart
+        let months = [];
+        let sickCounts = [];
+        for (let i = 5; i >= 0; i--) {
+            let d = new Date();
+            d.setMonth(d.getMonth() - i);
+            let month = d.toISOString().slice(0, 7);
+            months.push(month);
+            sickCounts.push(patients.filter(p => p.date.startsWith(month)).length);
+        }
+
+        let ctx = document.getElementById('monthlyComparisonChart')?.getContext('2d');
+        if (ctx) {
+            if (window.monthlyChart) window.monthlyChart.destroy();
+            window.monthlyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Sick Students',
+                        data: sickCounts,
+                        borderColor: '#e74c3c',
+                        fill: false
+                    }]
+                }
+            });
+        }
+
+        // Recovery chart
+        let ctx2 = document.getElementById('recoveryChart')?.getContext('2d');
+        if (ctx2) {
+            let active = patients.filter(p => p.drugs.some(d => d.status === 'ongoing')).length;
+            let recovered = patients.filter(p => !p.drugs.some(d => d.status === 'ongoing')).length;
+
+            if (window.recoveryChart) window.recoveryChart.destroy();
+            window.recoveryChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Recovered'],
+                    datasets: [{
+                        data: [active, recovered],
+                        backgroundColor: ['#f39c12', '#27ae60']
+                    }]
+                }
+            });
+        }
+    }
+
+    // Search
+    searchInput.addEventListener('input', () => refreshUI(searchInput.value));
+
+    // Export functions
+    function generateFullReport() {
+        let data = [['PatientID', 'Name', 'Class', 'Stream', 'Age', 'Gender', 'Symptoms', 'Description', 
+                     'Medications', 'Status', 'Referral', 'Visit Date', 'Adherence']];
+        
+        patients.forEach(p => {
+            let drugStr = p.drugs.map(d => `${d.name} (${d.dosage} ${d.timesPerDay}x/d)`).join('; ');
+            let referralStr = p.referral ? `${p.referral.to} at ${p.referral.time}` : 'None';
+            let adherenceStr = '';
+            if (p.adherence) {
+                adherenceStr = Object.entries(p.adherence).map(([date, drugs]) => {
+                    return date + ':' + Object.entries(drugs).map(([dn, times]) => 
+                        `${dn}(${times.morning ? 'M' : '-'}${times.afternoon ? 'A' : '-'}${times.evening ? 'E' : '-'})`
+                    ).join(' ');
+                }).join(' | ');
+            }
+            
+            data.push([
+                p.patientNumber, p.name, p.class, p.stream, p.age, p.gender, p.symptoms, p.description,
+                drugStr, p.drugs.some(d => d.status === 'ongoing') ? 'Active' : 'Completed',
+                referralStr, p.date, adherenceStr
+            ]);
+        });
+
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, 'PatientRecords');
+        
+        // Add inventory sheet
+        let invData = [['Medication', 'Quantity', 'Unit', 'Reorder Level', 'Price']];
+        inventory.forEach(i => invData.push([i.name, i.quantity, i.unit, i.reorderLevel, i.price]));
+        let invWs = XLSX.utils.aoa_to_sheet(invData);
+        XLSX.utils.book_append_sheet(wb, invWs, 'Inventory');
+
+        // Add dispensing sheet
+        let dispData = [['Date', 'Medication', 'Quantity', 'Patient', 'Nurse', 'Dose']];
+        dispensingLog.forEach(d => dispData.push([d.date, d.medication, d.quantity, d.patient, d.nurse, d.dose || '']));
+        let dispWs = XLSX.utils.aoa_to_sheet(dispData);
+        XLSX.utils.book_append_sheet(wb, dispWs, 'Dispensing');
+
+        return wb;
+    }
+
+    // Export button handlers
+    document.getElementById('exportFullReportBtn')?.addEventListener('click', () => {
+        if (patients.length === 0) {
+            alert('No data to export');
+            return;
+        }
+        let wb = generateFullReport();
+        XLSX.writeFile(wb, `healthcare_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    });
+
+    document.getElementById('exportAccountabilityBtn')?.addEventListener('click', () => {
+        let wb = generateFullReport();
+        XLSX.writeFile(wb, `accountability_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    });
+
+    // Stock update dialog
+    const stockDialog = document.getElementById('stockDialog');
+    const updateStockBtn = document.getElementById('updateStockBtn');
+    const cancelStockBtn = document.getElementById('cancelStockBtn');
+    const confirmStockBtn = document.getElementById('confirmStockBtn');
+
+    updateStockBtn?.addEventListener('click', () => {
+        stockDialog.style.display = 'flex';
+    });
+
+    cancelStockBtn?.addEventListener('click', () => {
+        stockDialog.style.display = 'none';
+    });
+
+    confirmStockBtn?.addEventListener('click', () => {
+        let med = document.getElementById('stockMedication').value;
+        let qty = parseInt(document.getElementById('stockQuantity').value);
+        let reorder = parseInt(document.getElementById('stockReorder').value);
+
+        let item = inventory.find(i => i.name === med);
+        if (item) {
+            item.quantity = qty;
+            item.reorderLevel = reorder;
+        } else {
+            inventory.push({
+                id: inventory.length + 1,
+                name: med,
+                quantity: qty,
+                reorderLevel: reorder,
+                unit: 'units',
+                price: 1.00
+            });
+        }
+
+        saveInventory();
+        updateInventoryDisplay();
+        stockDialog.style.display = 'none';
+    });
+
+    // Tab switching
+    const tabs = {
+        tabMain: 'paneMain',
+        tabStats: 'paneStats',
+        tabHistory: 'paneHistory',
+        tabAccountability: 'paneAccountability',
+        tabReports: 'paneReports'
+    };
+
+    Object.entries(tabs).forEach(([tabId, paneId]) => {
+        document.getElementById(tabId).addEventListener('click', () => {
+            // Update tabs
+            Object.keys(tabs).forEach(t => {
+                document.getElementById(t).classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+            
+            // Update panes
+            Object.values(tabs).forEach(p => {
+                document.getElementById(p).classList.remove('active');
+            });
+            document.getElementById(paneId).classList.add('active');
+
+            // Refresh specific views
+            if (paneId === 'paneAccountability') {
+                updateInventoryDisplay();
+            } else if (paneId === 'paneHistory') {
+                updateHistoryView();
+            } else if (paneId === 'paneReports') {
+                updateReports();
+            } else if (paneId === 'paneStats') {
+                updateAllCharts();
+            }
+        });
+    });
+
+    // Initialize database and load data
+    openDB().then(() => {
+        // Load patients
+        const tx = db.transaction(STUDENT_STORE, 'readonly');
+        const store = tx.objectStore(STUDENT_STORE);
+        const req = store.getAll();
+        req.onsuccess = () => {
+            if (req.result && req.result.length > 0) {
+                patients = req.result;
+            }
+            
+            // Load inventory
+            const invTx = db.transaction(INVENTORY_STORE, 'readonly');
+            const invStore = invTx.objectStore(INVENTORY_STORE);
+            const invReq = invStore.getAll();
+            invReq.onsuccess = () => {
+                if (invReq.result && invReq.result.length > 0) {
+                    inventory = invReq.result;
+                }
+                
+                // Load dispensing log
+                const dispTx = db.transaction(DISPENSING_STORE, 'readonly');
+                const dispStore = dispTx.objectStore(DISPENSING_STORE);
+                const dispReq = dispStore.getAll();
+                dispReq.onsuccess = () => {
+                    if (dispReq.result && dispReq.result.length > 0) {
+                        dispensingLog = dispReq.result;
+                    }
+                    
+                    refreshUI('');
+                    updateInventoryDisplay();
+                };
+            };
+        };
+    }).catch(e => {
+        console.warn('DB error, using in-memory data');
+        initializeSampleData();
+        refreshUI('');
+    });
+
+    // Import functionality
+    document.getElementById('importBtn').addEventListener('click', () => {
+        const file = document.getElementById('importFile').files[0];
+        if (!file) {
+            alert('Select a file');
+            return;
+        }
+
+        PapaParse.parse(file, {
+            header: true,
+            complete: (results) => {
+                studentDatabase = results.data.filter(row => row.Name && row.Name.trim() !== '');
+                
+                // Save to DB
+                const tx = db.transaction(IMPORT_STORE, 'readwrite');
+                const store = tx.objectStore(IMPORT_STORE);
+                store.clear();
+                studentDatabase.forEach((item, idx) => {
+                    item.id = idx;
+                    store.put(item);
+                });
+
+                // Update datalist
+                const list = document.getElementById('studentNameList');
+                list.innerHTML = '';
+                studentDatabase.forEach(s => {
+                    if (s.Name) {
+                        const opt = document.createElement('option');
+                        opt.value = s.Name;
+                        list.appendChild(opt);
+                    }
+                });
+
+                document.getElementById('importStatus').innerText = `Imported ${studentDatabase.length} students.`;
+            }
+        });
+    });
+
+    // Email functionality
+    document.getElementById('emailFullReportBtn')?.addEventListener('click', () => {
+        if (patients.length === 0) {
+            alert('No data to email');
+            return;
+        }
+        
+        let email = prompt('Enter admin email:', appSettings.adminEmail);
+        if (email) {
+            alert('Email functionality requires backend configuration.\nReport would be sent to: ' + email);
+            // In production, this would call the Python backend
+        }
+    });
+
+    // Initialize folder path display
+    document.getElementById('folderPathDisplay').innerHTML = 
+        '<i class="fas fa-folder-open"></i> Data stored in browser database';
+    document.getElementById('saveFolderPath').innerHTML = 
+        'Browser storage';
+
+    console.log('Pulse Healthcare System initialized');
+})();
+</script>
+</body>
+</html>
